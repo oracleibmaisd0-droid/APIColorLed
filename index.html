@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Selector de Color</title>
+    <style>
+        /* Estilos generales */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: background-color 0.5s ease-in-out; /* Suaviza el cambio de color */
+        }
+
+        /* Contenedor de botones de color */
+        .botones {
+            position: fixed;
+            top: 50px; /* Separado un poco del top para no solaparse con el botón de pantalla completa */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Contenedor de botones de colores */
+        .color-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Estilos de los botones */
+        .boton {
+            width: 50px;
+            height: 50px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* Colores de los botones */
+        .rojo { background-color: red; }
+        .naranja { background-color: orange; }
+        .amarillo { background-color: yellow; }
+        .verde { background-color: green; }
+        .azul { background-color: blue; }
+        
+        /* Botón multicolor con gradiente arcoíris */
+        .multicolor {
+            background: linear-gradient(90deg, red, orange, yellow, green, blue, purple);
+        }
+
+        /* Estilos para los botones de pantalla completa y zoom */
+        #fullscreenButton, #zoomInButton, #zoomOutButton {
+            position: fixed;
+            top: 10px;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        /* Estilos del botón de pantalla completa */
+        #fullscreenButton {
+            right: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+
+        #fullscreenButton:hover {
+            background-color: #0056b3;
+        }
+
+        /* Estilos para los botones de zoom */
+        #zoomInButton {
+            left: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+
+        #zoomInButton:hover {
+            background-color: #218838;
+        }
+
+        #zoomOutButton {
+            left: 110px;
+            background-color: red;
+            color: white;
+            border: none;
+        }
+
+        #zoomOutButton:hover {
+            background-color: darkred;
+        }
+
+        /* Estilo Powered by Oracle */
+        .powered {
+            margin-top: 10px;
+            color: black;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Botón de Pantalla Completa -->
+    <button id="fullscreenButton" onclick="toggleFullScreen()">Pantalla Completa</button>
+
+    <!-- Botones de Zoom -->
+    <button id="zoomInButton" onclick="zoomIn()">Zoom In</button>
+    <button id="zoomOutButton" onclick="zoomOut()">Zoom Out</button>
+
+    <!-- Contenedor de botones de colores -->
+    <div class="botones">
+        <div class="color-buttons">
+            <button class="boton rojo" onclick="cambiarColor('red')"></button>
+            <button class="boton naranja" onclick="cambiarColor('orange')"></button>
+            <button class="boton amarillo" onclick="cambiarColor('yellow')"></button>
+            <button class="boton verde" onclick="cambiarColor('green')"></button>
+            <button class="boton azul" onclick="cambiarColor('blue')"></button>
+            <button class="boton multicolor" onclick="modoMulticolor()"></button>
+        </div>
+        <div class="powered"><a href="https://oracleapi.netlify.app">Powered by Oracle</a></div>
+    </div>
+
+    <script>
+        let intervaloMulticolor;
+        let currentZoom = 1;
+
+        // Función para cambiar el color de fondo
+        function cambiarColor(color) {
+            clearInterval(intervaloMulticolor); // Detiene el efecto multicolor si está activo
+            document.body.style.backgroundColor = color;
+        }
+
+        // Función para activar el modo multicolor
+        function modoMulticolor() {
+            clearInterval(intervaloMulticolor); // Evita múltiples intervalos
+            const colores = ["red", "orange", "yellow", "green", "blue", "purple"];
+            let index = 0;
+
+            intervaloMulticolor = setInterval(() => {
+                document.body.style.backgroundColor = colores[index];
+                index = (index + 1) % colores.length;
+            }, 500);
+        }
+
+        // Función para activar/desactivar el modo pantalla completa
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.mozRequestFullScreen) { // Firefox
+                    document.documentElement.mozRequestFullScreen();
+                } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari y Opera
+                    document.documentElement.webkitRequestFullscreen();
+                } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
+                    document.documentElement.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) { // Firefox
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { // Chrome, Safari y Opera
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { // IE/Edge
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        // Función para aumentar el zoom
+        function zoomIn() {
+            currentZoom += 0.1;
+            document.body.style.transform = `scale(${currentZoom})`;
+        }
+
+        // Función para reducir el zoom
+        function zoomOut() {
+            currentZoom -= 0.1;
+            document.body.style.transform = `scale(${currentZoom})`;
+        }
+    </script>
+
+</body>
+</html>
