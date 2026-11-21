@@ -31,11 +31,26 @@
             align-items: center;
         }
 
-        /* Contenedor de botones de colores */
-        .color-buttons {
-            display: flex;
-            gap: 10px;
-        }
+/* Contenedor de botones de colores */
+.color-buttons {
+    display: flex;
+    gap: 10px;
+    width: min(100%, 390px);
+    box-sizing: border-box;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+}
+
+.color-buttons::-webkit-scrollbar {
+    display: none;
+}
 
         /* Estilos de los botones */
         .boton {
@@ -44,6 +59,7 @@
             border: none;
             cursor: pointer;
             border-radius: 5px;
+            flex: 0 0 50px;
         }
 
         /* Colores de los botones */
@@ -127,16 +143,14 @@
 
     <!-- Contenedor de botones de colores -->
     <div class="botones">
-        <div class="color-buttons">
-            <button class="boton rojo" onclick="cambiarColor('red')"></button>
-            <button class="boton naranja" onclick="cambiarColor('orange')"></button>
-            <button class="boton amarillo" onclick="cambiarColor('yellow')"></button>
-            <button class="boton verde" onclick="cambiarColor('green')"></button>
-            <button class="boton azul" onclick="cambiarColor('blue')"></button>
-            <button class="boton multicolor" onclick="modoMulticolor()"></button>
-        </div>
-        <div class="powered"><a href="https://oraclewebapi.netlify.app">Powered by Oracle</a></div>
-    </div>
+<div class="color-buttons">
+    <button class="boton rojo" aria-label="Rojo"></button>
+    <button class="boton naranja" aria-label="Naranja"></button>
+    <button class="boton amarillo" aria-label="Amarillo"></button>
+    <button class="boton verde" aria-label="Verde"></button>
+    <button class="boton azul" aria-label="Azul"></button>
+    <button class="boton multicolor" aria-label="Multicolor"></button>
+</div>
 
     <script>
         let intervaloMulticolor;
@@ -197,6 +211,212 @@
             document.body.style.transform = `scale(${currentZoom})`;
         }
     </script>
+
+
+<script type="module">
+import {
+    glass,
+    attachPress
+} from "https://cdn.jsdelivr.net/npm/glassy-liquid@0.1.0/+esm";
+
+// =====================================
+// LIQUID GLASS - TODOS LOS BOTONES
+// =====================================
+
+document.querySelectorAll("button").forEach(elemento => {
+    const superficie = glass(elemento, {
+        radius: 8,
+        material: "clear",
+        appearance: "dark",
+        refraction: 18
+    });
+
+    attachPress(elemento, superficie);
+});
+
+// =====================================
+// SONIDO MECÁNICO DE LA RULETA
+// =====================================
+
+let audioContext = null;
+
+const SOUND_FREQUENCY = 10000;
+const SOUND_DURATION = 0.010;
+const VIBRATION_DURATION = 10;
+
+function playTick() {
+    try {
+        if (!audioContext) {
+            audioContext = new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+        }
+
+        if (audioContext.state === "suspended") {
+            audioContext.resume();
+        }
+
+        const duration = SOUND_DURATION;
+        const now = audioContext.currentTime;
+
+        const buffer = audioContext.createBuffer(
+            1,
+            Math.ceil(audioContext.sampleRate * duration),
+            audioContext.sampleRate
+        );
+
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < data.length; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const source = audioContext.createBufferSource();
+        const filter = audioContext.createBiquadFilter();
+        const volume = audioContext.createGain();
+
+        source.buffer = buffer;
+
+        filter.type = "highpass";
+        filter.frequency.value = SOUND_FREQUENCY;
+
+        volume.gain.setValueAtTime(0.12, now);
+        volume.gain.exponentialRampToValueAtTime(
+            0.001,
+            now + duration
+        );
+
+        source.connect(filter);
+        filter.connect(volume);
+        volume.connect(audioContext.destination);
+
+        source.start(now);
+        source.stop(now + duration);
+
+    } catch (error) {
+        console.warn("No se pudo reproducir el sonido:", error);
+    }
+}
+
+// =====================================
+// ACTIVACIÓN Y VIBRACIÓN DE COLORES
+// =====================================
+
+const palette = document.querySelector(".color-buttons");
+
+let activeButton = null;
+let startX = 0;
+let startScrollLeft = 0;
+let ignoreClick = false;
+
+function selectColorButton(button) {
+    if (!button || button === activeButton) return;
+
+    activeButton = button;
+
+    if (button.classList.contains("multicolor")) {
+        modoMulticolor();
+    } else {
+        const colors = {
+            rojo: "red",
+            naranja: "orange",
+            amarillo: "yellow",
+            verde: "green",
+            azul: "blue"
+        };
+
+        const colorClass = Object.keys(colors).find(
+            name => button.classList.contains(name)
+        );
+
+        if (colorClass) {
+            cambiarColor(colors[colorClass]);
+        }
+    }
+
+    playTick();
+
+    if (navigator.vibrate) {
+        navigator.vibrate(VIBRATION_DURATION);
+    }
+}
+
+// =====================================
+// DESPLAZAMIENTO TÁCTIL Y CON RATÓN
+// =====================================
+
+palette.addEventListener("pointerdown", event => {
+    const button = event.target.closest(".boton");
+
+    if (!button) return;
+
+    palette.setPointerCapture(event.pointerId);
+
+    startX = event.clientX;
+    startScrollLeft = palette.scrollLeft;
+
+    activeButton = null;
+    ignoreClick = true;
+
+    selectColorButton(button);
+});
+
+palette.addEventListener("pointermove", event => {
+    if (!palette.hasPointerCapture(event.pointerId)) return;
+
+    const distance = event.clientX - startX;
+
+    palette.scrollLeft = startScrollLeft - distance;
+
+    const element = document.elementFromPoint(
+        event.clientX,
+        event.clientY
+    );
+
+    const button = element?.closest(".boton");
+
+    if (button && palette.contains(button)) {
+        selectColorButton(button);
+    }
+});
+
+palette.addEventListener("pointerup", event => {
+    if (palette.hasPointerCapture(event.pointerId)) {
+        palette.releasePointerCapture(event.pointerId);
+    }
+
+    activeButton = null;
+});
+
+palette.addEventListener("pointercancel", () => {
+    activeButton = null;
+    ignoreClick = false;
+});
+
+// Evita repetir la activación al soltar el dedo.
+// También permite la selección mediante teclado.
+
+palette.addEventListener("click", event => {
+    if (ignoreClick && event.detail !== 0) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        ignoreClick = false;
+        return;
+    }
+
+    const button = event.target.closest(".boton");
+
+    if (button) {
+        activeButton = null;
+        selectColorButton(button);
+    }
+}, true);
+
+</script>
+</body>
+</html>
+
 
 </body>
 </html>
